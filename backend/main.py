@@ -85,11 +85,12 @@ def extract_json_from_text(text: str):
     return json.loads(text[start:end])
 
 # ─── AI Quiz Generation ────────────────────
-async def generate_ai_quiz(topic: str, count: int, provider: str, api_key: str):
+async def generate_ai_quiz(topic: str, count: int, difficulty: str, provider: str, api_key: str):
     if not api_key or not provider:
         return get_mock_quiz(topic, count)
 
     prompt = f"""Generate {count} multiple choice quiz questions about "{topic}".
+The difficulty level of the questions should be: {difficulty}.
 
 Return ONLY a JSON array, no markdown formatting around it, no explanations before or after. The response must be perfectly valid JSON.
 [
@@ -172,6 +173,7 @@ def root():
 class GenerateRequest(BaseModel):
     topic: str
     count: int = 5
+    difficulty: str = "Medium"
     provider: str = ""
     api_key: str = ""
 
@@ -191,12 +193,12 @@ async def generate_quiz(req: GenerateRequest):
     if not req.topic.strip():
         raise HTTPException(400, "Topic cannot be empty")
     
-    questions = await generate_ai_quiz(req.topic.strip(), min(req.count, 10), req.provider, req.api_key)
+    questions = await generate_ai_quiz(req.topic.strip(), min(req.count, 10), req.difficulty, req.provider, req.api_key)
     
     db = SessionLocal()
     try:
         session = QuizSession(
-            topic=req.topic,
+            topic=f"{req.topic} ({req.difficulty})",
             questions=json.dumps(questions),
             total=len(questions)
         )
