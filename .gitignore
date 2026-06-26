@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Databases
+quiz.db
+quiz.db-journal
+
+# IDEs and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
