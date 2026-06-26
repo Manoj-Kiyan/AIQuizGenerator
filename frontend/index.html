@@ -264,6 +264,29 @@
   .badge-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
   .badge-desc { font-size: 0.85rem; color: var(--muted); }
 
+  /* Advanced Analysis */
+  .analysis-section { margin: 48px 0; padding: 32px; background: rgba(0,0,0,0.2); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: inset 0 2px 10px rgba(0,0,0,0.2); }
+  .analysis-title { font-size: 1.5rem; font-weight: 800; margin-bottom: 32px; text-align: center; letter-spacing: 0.02em; }
+  
+  .skill-grid { display: grid; gap: 24px; margin-bottom: 48px; }
+  .skill-row { display: flex; align-items: center; gap: 16px; }
+  .skill-label { width: 120px; font-weight: 600; font-size: 0.95rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; }
+  .skill-bar-bg { flex: 1; height: 14px; background: var(--surface); border-radius: 7px; overflow: hidden; border: 1px solid var(--border); }
+  .skill-bar-fill { height: 100%; border-radius: 7px; width: 0%; transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1); }
+  .skill-value { width: 50px; text-align: right; font-weight: 700; font-size: 1.1rem; }
+  
+  .timeline-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; text-align: center; color: var(--muted); }
+  .timeline-container { position: relative; margin-top: 20px; padding: 20px 0; display: flex; justify-content: space-between; align-items: center; }
+  .timeline-line { position: absolute; top: 50%; left: 0; right: 0; height: 4px; background: var(--surface); transform: translateY(-50%); z-index: 1; border-radius: 2px; }
+  .timeline-dot { position: relative; width: 24px; height: 24px; border-radius: 50%; z-index: 2; cursor: pointer; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); border: 3px solid var(--bg); }
+  .timeline-dot:hover { transform: scale(1.4); z-index: 10; }
+  .timeline-tooltip { 
+    position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%) translateY(10px);
+    background: var(--text); color: var(--bg); padding: 6px 10px; border-radius: 6px; font-size: 0.8rem;
+    font-weight: 700; opacity: 0; pointer-events: none; transition: all 0.2s; white-space: nowrap; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  }
+  .timeline-dot:hover .timeline-tooltip { opacity: 1; transform: translateX(-50%) translateY(-12px); }
+
   .review-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 24px; }
   .review-item {
     background: var(--surface); border: 1px solid var(--border);
@@ -469,6 +492,7 @@
       <button class="nav-btn secondary" onclick="goHome()">🏠 Back to Home</button>
       <button class="nav-btn primary" onclick="retryQuiz()">🔄 Retake Quiz</button>
     </div>
+    <div id="advancedAnalysisContainer"></div>
 
     <div style="margin-top: 48px;">
       <div class="review-title">Detailed Review</div>
@@ -504,7 +528,8 @@ const state = {
   isAnswered: false,
   questionStartTime: 0,
   totalTimeTaken: 0,
-  longestStreak: 0
+  longestStreak: 0,
+  questionTimes: []
 };
 
 // If hosted on Render (which serves the frontend), it will dynamically use window.location.origin.
@@ -624,6 +649,7 @@ async function generateQuiz() {
     state.points = 0;
     state.totalTimeTaken = 0;
     state.longestStreak = 0;
+    state.questionTimes = [];
     
     updateHUD();
     showPage('quiz');
@@ -717,6 +743,7 @@ function revealAnswer(selectedIndex) {
   
   const timeTaken = Math.min(15, (Date.now() - state.questionStartTime) / 1000);
   state.totalTimeTaken += timeTaken;
+  state.questionTimes.push(timeTaken);
   
   const q = state.questions[state.current];
   const isCorrect = selectedIndex === q.answer;
@@ -839,6 +866,53 @@ function showResults(data) {
       </div>
     </div>
   `).join('');
+  
+  // Advanced Skills & Timeline
+  const precision = data.percentage;
+  const reflexes = Math.max(0, Math.round(((15 - avgTime) / 15) * 100));
+  const momentum = data.total > 0 ? Math.round((state.longestStreak / data.total) * 100) : 0;
+  
+  const timelineHTML = data.results.map((r, i) => {
+    const time = state.questionTimes[i] ? state.questionTimes[i].toFixed(1) : 15;
+    const isCorrect = r.is_correct;
+    const color = isCorrect ? 'var(--success)' : 'var(--danger)';
+    const glow = isCorrect ? 'rgba(52, 211, 153, 0.4)' : 'rgba(248, 113, 113, 0.4)';
+    return `
+      <div class="timeline-dot" style="background: ${color}; box-shadow: 0 0 15px ${glow};">
+        <div class="timeline-tooltip">Q${i+1}: ${time}s</div>
+      </div>
+    `;
+  }).join('');
+
+  document.getElementById('advancedAnalysisContainer').innerHTML = `
+    <div class="analysis-section">
+      <div class="analysis-title">Performance Analysis 🧠</div>
+      
+      <div class="skill-grid">
+        <div class="skill-row">
+          <div class="skill-label">Precision <span>🎯</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill" style="background: var(--accent); width: ${precision}%"></div></div>
+          <div class="skill-value">${precision}%</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label">Reflexes <span>⚡</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill" style="background: var(--accent3); width: ${reflexes}%"></div></div>
+          <div class="skill-value">${reflexes}%</div>
+        </div>
+        <div class="skill-row">
+          <div class="skill-label">Momentum <span>🔥</span></div>
+          <div class="skill-bar-bg"><div class="skill-bar-fill" style="background: var(--accent2); width: ${momentum}%"></div></div>
+          <div class="skill-value">${momentum}%</div>
+        </div>
+      </div>
+
+      <div class="timeline-title">Match Timeline</div>
+      <div class="timeline-container">
+        <div class="timeline-line"></div>
+        ${timelineHTML}
+      </div>
+    </div>
+  `;
   
   const reviewDiv = document.getElementById('reviewItems');
   reviewDiv.innerHTML = '';
