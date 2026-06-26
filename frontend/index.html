@@ -242,13 +242,27 @@
   .result-score { font-size: 1.6rem; font-weight: 600; }
   .result-msg { font-size: 1.1rem; color: var(--muted); margin-top: 8px; }
 
-  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 32px 0; }
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 32px 0; }
   .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 24px; text-align: center; }
   .stat-num { font-size: 2rem; font-weight: 700; }
   .stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 8px; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
   .stat-correct .stat-num { color: var(--success); }
   .stat-wrong .stat-num { color: var(--danger); }
   .stat-pct .stat-num { color: var(--accent); }
+  .stat-time .stat-num { color: var(--accent3); }
+
+  .result-points { font-size: 2.5rem; font-weight: 800; color: #eab308; margin-top: 16px; font-family: 'Space Grotesk', sans-serif; text-shadow: 0 4px 15px rgba(234, 179, 8, 0.4); }
+  
+  .badges-container { display: flex; flex-wrap: wrap; gap: 16px; margin: 32px 0; justify-content: center; }
+  .badge-card {
+    display: flex; align-items: center; gap: 16px; background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.3); padding: 16px 24px; border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.3s;
+  }
+  .badge-card:hover { transform: translateY(-5px); border-color: var(--accent); }
+  .badge-icon { font-size: 2.5rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); }
+  .badge-title { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+  .badge-desc { font-size: 0.85rem; color: var(--muted); }
 
   .review-title { font-size: 1.4rem; font-weight: 700; margin-bottom: 24px; }
   .review-item {
@@ -294,7 +308,7 @@
   @media (max-width: 640px) {
     .hero h1 { font-size: 2.2rem; }
     .api-settings { width: 100%; flex-direction: column; align-items: stretch; }
-    .stats-row { grid-template-columns: 1fr; gap: 12px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); gap: 12px; }
     .result-grade { font-size: 4.5rem; }
     .result-actions { flex-direction: column; }
     .glass-card { padding: 24px; }
@@ -426,8 +440,11 @@
     <div class="result-hero">
       <div class="result-grade" id="resultGrade">A+</div>
       <div class="result-score" id="resultScore"></div>
+      <div class="result-points" id="resultPoints">🌟 0 Points</div>
       <div class="result-msg" id="resultMsg"></div>
     </div>
+    
+    <div id="badgesContainer" class="badges-container"></div>
 
     <div class="stats-row">
       <div class="stat-card stat-correct">
@@ -440,7 +457,11 @@
       </div>
       <div class="stat-card stat-pct">
         <div class="stat-num" id="statPct">0%</div>
-        <div class="stat-label">Total Score 🎯</div>
+        <div class="stat-label">Accuracy 🎯</div>
+      </div>
+      <div class="stat-card stat-time">
+        <div class="stat-num" id="statTime">0s</div>
+        <div class="stat-label">Avg Time ⏱️</div>
       </div>
     </div>
 
@@ -480,7 +501,10 @@ const state = {
   points: 0,
   timerInterval: null,
   timeLeft: 15,
-  isAnswered: false
+  isAnswered: false,
+  questionStartTime: 0,
+  totalTimeTaken: 0,
+  longestStreak: 0
 };
 
 // If hosted on Render (which serves the frontend), it will dynamically use window.location.origin.
@@ -598,6 +622,8 @@ async function generateQuiz() {
     state.lives = 3;
     state.streak = 0;
     state.points = 0;
+    state.totalTimeTaken = 0;
+    state.longestStreak = 0;
     
     updateHUD();
     showPage('quiz');
@@ -649,6 +675,7 @@ function updateHUD() {
 function startTimer() {
   clearInterval(state.timerInterval);
   state.timeLeft = 15;
+  state.questionStartTime = Date.now();
   const fill = document.getElementById('timerFill');
   fill.style.transition = 'none';
   fill.style.width = '100%';
@@ -688,11 +715,15 @@ function revealAnswer(selectedIndex) {
   state.isAnswered = true;
   clearInterval(state.timerInterval);
   
+  const timeTaken = Math.min(15, (Date.now() - state.questionStartTime) / 1000);
+  state.totalTimeTaken += timeTaken;
+  
   const q = state.questions[state.current];
   const isCorrect = selectedIndex === q.answer;
   
   if (isCorrect) {
     state.streak++;
+    if (state.streak > state.longestStreak) state.longestStreak = state.streak;
     state.points += 100 + (state.streak * 20);
   } else {
     state.streak = 0;
@@ -772,6 +803,8 @@ async function submitQuiz() {
 function showResults(data) {
   showPage('results');
   
+  const avgTime = data.total > 0 ? (state.totalTimeTaken / data.total).toFixed(1) : 0;
+  
   const msgs = {
     'A+': 'Outstanding performance! You are an expert.',
     'A':  'Excellent work! Just a few minor mistakes.',
@@ -782,10 +815,30 @@ function showResults(data) {
   
   document.getElementById('resultGrade').textContent = data.grade;
   document.getElementById('resultScore').textContent = `You got ${data.score} out of ${data.total} correct`;
+  document.getElementById('resultPoints').textContent = `🌟 ${state.points.toLocaleString()} Points`;
   document.getElementById('resultMsg').textContent = msgs[data.grade] || 'Keep learning and improving!';
   document.getElementById('statCorrect').textContent = data.score;
   document.getElementById('statWrong').textContent = data.total - data.score;
   document.getElementById('statPct').textContent = data.percentage + '%';
+  document.getElementById('statTime').textContent = `${avgTime}s`;
+  
+  // Calculate Badges
+  const badges = [];
+  if (data.percentage === 100 && state.lives === 3) badges.push({ icon: '🏆', title: 'Flawless Victory', desc: '100% Accuracy, No lives lost' });
+  if (avgTime > 0 && avgTime < 5) badges.push({ icon: '⚡', title: 'Speed Demon', desc: 'Answered under 5s on average' });
+  if (state.longestStreak >= 3) badges.push({ icon: '🔥', title: 'Streak Master', desc: 'Hit a streak of 3 or more' });
+  if (state.lives === 1 && data.percentage >= 50) badges.push({ icon: '🛡️', title: 'Survivor', desc: 'Finished with 1 life remaining' });
+  if (badges.length === 0) badges.push({ icon: '🎓', title: 'Avid Learner', desc: 'Completed the challenge' });
+
+  document.getElementById('badgesContainer').innerHTML = badges.map(b => `
+    <div class="badge-card">
+      <div class="badge-icon">${b.icon}</div>
+      <div>
+        <div class="badge-title">${b.title}</div>
+        <div class="badge-desc">${b.desc}</div>
+      </div>
+    </div>
+  `).join('');
   
   const reviewDiv = document.getElementById('reviewItems');
   reviewDiv.innerHTML = '';
