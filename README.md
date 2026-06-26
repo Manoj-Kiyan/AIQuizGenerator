@@ -1,75 +1,114 @@
-# 🧠 AI Quiz Generator — Full Stack App
+🧠 AI Quiz Generator
 
-## Tech Stack
-- **Backend**: Python + FastAPI
-- **Database**: SQLite (via SQLAlchemy)
-- **Frontend**: HTML5 + Vanilla JS
-- **AI**: Anthropic Claude API (optional — mock data works without it!)
+An AI-powered quiz application built with FastAPI, SQLite, and Vanilla JavaScript. Generate quizzes on different topics, submit answers, track scores, and view quiz history. If an Anthropic Claude API key is not provided, the application automatically uses built-in mock questions.
 
 ---
 
-## Setup & Run (5 Steps!)
+🚀 Tech Stack
 
-### 1. Install dependencies
-```bash
-pip install -r requirements.txt
-```
-
-### 2. (Optional) AI enable பண்ண — API key add பண்ணு
-```bash
-export ANTHROPIC_API_KEY=your_key_here
-```
-> API key இல்லாம் run பண்ணினாலும் **Mock data** automatically use ஆகும்! ✅
-
-### 3. Start the server
-```bash
-cd backend
-python main.py
-```
-
-### 4. Browser-ல் open பண்ணு
-```
-http://localhost:8000
-```
+- Backend: Python + FastAPI
+- Database: SQLite (SQLAlchemy)
+- Frontend: HTML5 + Vanilla JavaScript
+- AI: Anthropic Claude API (Optional)
 
 ---
 
-## Features
+📂 Project Structure
 
-| Feature | Details |
-|---------|---------|
-| 🤖 AI Quiz | Claude API → auto generate questions |
-| 📦 Mock Data | API key இல்லாம் 5 built-in topics |
-| 💾 SQLite DB | Sessions + scores save ஆகும் |
-| 📊 Results | Grade, score %, detailed review |
-| 📜 History | Last 10 quiz sessions |
-| 🔥 Topics | Python, JS, HTML, SQL, ML built-in |
-
-## Mock Topics (No API key needed!)
-- `python`
-- `javascript`
-- `html`
-- `sql`
-- `machine learning`
-
----
-
-## API Endpoints
-
-```
-GET  /api/topics    → Available topics list
-POST /api/generate  → Generate quiz {topic, count}
-POST /api/submit    → Submit answers {session_id, answers}
-GET  /api/history   → Recent quiz history
-```
-
-## Project Structure
-```
 quiz-app/
 ├── backend/
-│   └── main.py       # FastAPI app + SQLite models
+│   └── main.py
 ├── frontend/
-│   └── index.html    # Single-page HTML5 app
+│   └── index.html
 ├── requirements.txt
 └── README.md
-```
+
+---
+
+⚙️ Installation
+
+1. Install dependencies
+
+pip install -r requirements.txt
+
+2. (Optional) Configure Claude API
+
+export ANTHROPIC_API_KEY=your_api_key
+
+«If no API key is provided, the application automatically uses mock quiz data.»
+
+3. Start the server
+
+cd backend
+python main.py
+
+4. Open in your browser
+
+http://localhost:8000
+
+---
+
+✨ Features
+
+- 🤖 AI-generated quizzes using Claude API
+- 📦 Built-in mock quizzes (No API key required)
+- 💾 SQLite database for storing quiz sessions and scores
+- 📊 Instant results with score, percentage, and grade
+- 📜 Quiz history (Last 10 attempts)
+- 🎯 Multiple built-in quiz topics
+
+---
+
+📚 Available Topics
+
+- Python
+- JavaScript
+- HTML
+- SQL
+- Machine Learning
+
+---
+
+🔌 API Endpoints
+
+Method| Endpoint| Description
+GET| "/api/topics"| Get available quiz topics
+POST| "/api/generate"| Generate a new quiz
+POST| "/api/submit"| Submit quiz answers
+GET| "/api/history"| View recent quiz history
+
+---
+
+📝 Example Request
+
+Generate a quiz:
+
+POST /api/generate
+
+{
+  "topic": "python",
+  "count": 5
+}
+
+Submit answers:
+
+POST /api/submit
+
+{
+  "session_id": 1,
+  "answers": [0, 2, 1, 3, 0]
+}
+
+---
+
+📌 Notes
+
+- No API key is required to run the project.
+- Mock quiz data is used automatically when the Claude API is unavailable.
+- Quiz sessions and scores are stored locally using SQLite.
+
+---
+
+📄 License
+
+This project is open-source and intended for learning and educational purposes.
