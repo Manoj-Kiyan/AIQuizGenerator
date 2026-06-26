@@ -206,8 +206,7 @@ async def generate_quiz(req: GenerateRequest):
         db.commit()
         db.refresh(session)
         
-        safe_questions = [{"question": q["question"], "options": q["options"]} for q in questions]
-        return {"session_id": session.id, "topic": req.topic, "questions": safe_questions, "total": len(questions)}
+        return {"session_id": session.id, "topic": req.topic, "questions": questions, "total": len(questions)}
     finally:
         db.close()
 
